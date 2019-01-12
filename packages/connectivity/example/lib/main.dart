@@ -38,6 +38,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   String _connectionStatus = 'Unknown';
   final Connectivity _connectivity = Connectivity();
+  List<WifiNetworkInfo> _networks = List<WifiNetworkInfo>();
   StreamSubscription<ConnectivityResult> _connectivitySubscription;
 
   @override
@@ -59,9 +60,11 @@ class _MyHomePageState extends State<MyHomePage> {
   // Platform messages are asynchronous, so we initialize in an async method.
   Future<void> initConnectivity() async {
     String connectionStatus;
+    List<WifiNetworkInfo> networks;
     // Platform messages may fail, so we use a try/catch PlatformException.
     try {
       connectionStatus = (await _connectivity.checkConnectivity()).toString();
+      networks = await _connectivity.getWifiNetworkList();
     } on PlatformException catch (e) {
       print(e.toString());
       connectionStatus = 'Failed to get connectivity.';
@@ -76,6 +79,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
     setState(() {
       _connectionStatus = connectionStatus;
+      _networks = networks;
     });
   }
 
@@ -85,7 +89,25 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: const Text('Plugin example app'),
       ),
-      body: Center(child: Text('Connection Status: $_connectionStatus\n')),
+      body: Column(
+        children: <Widget>[
+          Center(child: Text('Connection Status: $_connectionStatus\n')),
+          ListView.builder(
+            padding: EdgeInsets.all(8.0),
+            itemCount: _networks.length,
+            itemBuilder: (BuildContext context, int index) {
+              final WifiNetworkInfo item = _networks[index];
+              return Column(
+                children: <Widget>[
+                  Text('Wifi Network (${index + 1})'),
+                  Text(' SSID (${item.SSID})'),
+                  Text(' BSSID (${item.BSSID})'),
+                ],
+              );
+            },
+          )
+        ],
+      ),
     );
   }
 }

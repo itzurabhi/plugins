@@ -13,6 +13,16 @@ import 'package:flutter/services.dart';
 /// None: Device not connected to any network
 enum ConnectivityResult { wifi, mobile, none }
 
+/// Describes a wifi network in range
+///
+/// BSSID : bssid of the network
+/// SSID : ssid of the network
+class WifiNetworkInfo {
+  String BSSID, SSID;
+
+  WifiNetworkInfo({this.BSSID, this.SSID});
+}
+
 const MethodChannel _methodChannel =
     MethodChannel('plugins.flutter.io/connectivity');
 
@@ -55,6 +65,19 @@ class Connectivity {
     // our iOS implementation will return null
     if (wifiName == '<unknown ssid>') wifiName = null;
     return wifiName;
+  }
+
+  /// Obtains the wifi list (SSID,BSSID) of the visible networks
+  ///
+  /// From android 8.0 onwards the GPS must be ON (high accuracy)
+  /// in order to be able to obtain the SSID.
+  Future<List<WifiNetworkInfo>> getWifiNetworkList() async {
+    final List<Map<dynamic, dynamic>> networkListMap =
+        await _methodChannel.invokeMethod('wifiNetworkList');
+
+    return networkListMap.map((n) {
+      return WifiNetworkInfo(BSSID: n["bssid"], SSID: n["ssid"]);
+    }).toList();
   }
 }
 

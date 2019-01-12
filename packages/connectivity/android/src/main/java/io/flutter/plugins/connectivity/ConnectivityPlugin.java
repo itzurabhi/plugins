@@ -12,6 +12,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.net.wifi.ScanResult;
 import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.EventChannel.EventSink;
 import io.flutter.plugin.common.EventChannel.StreamHandler;
@@ -20,7 +21,7 @@ import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 import io.flutter.plugin.common.PluginRegistry.Registrar;
-
+import java.util.*; 
 /** ConnectivityPlugin */
 public class ConnectivityPlugin implements MethodCallHandler, StreamHandler {
   private final Registrar registrar;
@@ -81,6 +82,9 @@ public class ConnectivityPlugin implements MethodCallHandler, StreamHandler {
       case "wifiName":
         handleWifiName(call, result);
         break;
+      case "wifiNetworkList":
+        handleWifiNetworkList(call, result);
+        break;
       default:
         result.notImplemented();
         break;
@@ -94,6 +98,27 @@ public class ConnectivityPlugin implements MethodCallHandler, StreamHandler {
     } else {
       result.success("none");
     }
+  }
+
+  private void handleWifiNetworkList(MethodCall call, final Result result) {
+    WifiManager wifiManager =
+        (WifiManager) registrar.context().getSystemService(Context.WIFI_SERVICE);
+
+    List<Map<String,String>> wifiList = new ArrayList<>();
+
+    if(wifiManager != null){
+      wifiManager.startScan();
+
+      List<ScanResult> scanResults = wifiManager.getScanResults();
+
+      for (ScanResult sr : scanResults) {
+        Map<String,String> itemMap = new HashMap();
+        itemMap.put("ssid",sr.SSID);
+        itemMap.put("bssid",sr.BSSID);
+        wifiList.add(itemMap);
+      }
+    }
+    result.success(wifiList);
   }
 
   private void handleWifiName(MethodCall call, final Result result) {
